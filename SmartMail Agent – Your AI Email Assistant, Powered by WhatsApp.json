@@ -1,0 +1,744 @@
+{
+  "name": "SmartMail Agent – Your AI Email Assistant, Powered by WhatsApp",
+  "nodes": [
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.message_type }}\n",
+        "options": {
+          "systemMessage": "=# Overview  \nYou are an AI assistant specialized in managing email-related tasks and providing direct, actionable responses in French and English.\n\n## Context  \n- You are a general-purpose assistant supporting users in email communication and message automation.  \n- You operate in both French and English, depending on the language of the input.  \n- Your tone is strategic, clear, and focused on delivering concise responses.  \n\n## Instructions  \n1. Always validate the presence of actual message content before replying.  \n2. If the input is a greeting (e.g., \"Bonjour\", \"Merci\", \"comment tu vas\"), respond in a concise and friendly tone.  \n3. Format all email replies using HTML for clarity and structure.  \n4. If necessary, ask strategic questions to clarify vague requests or guide toward specific actions.  \n5. Respond directly to the user's message with a final sentence. Do not explain, structure, or rephrase the request.  \n6. If the input is unclear or lacks actionable content, request clarification.  \n7. You must never justify or comment on your actions.  \n\n## Tools    \n- Create Draft  \n- Send Email  \n\n## Examples  \n- Input: \"Bonjour\"  \n  - Output: \"Bonjour ! Ca va très bien, merci. Comment puis-je vous aider aujourd’hui ?\"  \n- Input: \"Envoies un email à Florence.\"  \n  - Output: \"L'email a été envoyé à Florence à l'adresse email suivante : xxx@nomdedomaine\"  \n- Input: \"Merci\"  \n  - Output: \"Avec plaisir ! 😊\"  \n\n## SOP (Standard Operating Procedure)  \n1. Check if the message contains usable content.  \n2. If empty, determine if it's a greeting; if not, request clarification.  \n3. Compose the email using this HTML format:  \n   \"Hello [Name],  \n   <br><br>  \n   [Content]  \n   <br><br>  \n   Best regards,  \n   <br>  \n   [Your Name]\"  \n4. Send or draft the email as instructed.  \n5. Log the outcome of the action if needed.  \n\n## Final Notes  \n- Your role is to provide fast, clean, and final outputs.  \n- Prioritize simple, scalable, and personalized interactions.  \n- All responses are time-sensitive and context-aware.  \n\nCurrent time is {{ $now.format('yyyy-MM-dd') }}  \nTime zone: Paris/Europe  \n"
+        }
+      },
+      "id": "d5d6d05f-7c5d-4ca9-ba6e-f25f0a73f043",
+      "name": "Email Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "position": [
+        496,
+        1344
+      ],
+      "typeVersion": 1.6,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $fromAI(\"emailAddress\") }}",
+        "subject": "={{ $fromAI(\"subject\") }}",
+        "message": "={{ $fromAI(\"emailBody\") }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "bc6ca003-76be-439a-942b-6a7b9313327f",
+      "name": "Send Email",
+      "type": "n8n-nodes-base.gmailTool",
+      "position": [
+        224,
+        1776
+      ],
+      "webhookId": "ea31e63d-e6c5-4f6d-b17f-9ecda87e11c8",
+      "typeVersion": 2.1
+    },
+    {
+      "parameters": {
+        "resource": "draft",
+        "subject": "={{ $fromAI(\"subject\") }}",
+        "emailType": "html",
+        "message": "={{ $fromAI(\"emailBody\") }}",
+        "options": {
+          "sendTo": "={{ $fromAI(\"emailAddress\") }}"
+        }
+      },
+      "id": "bc0bc2a3-c5cb-4e1e-ab68-219670a80eb7",
+      "name": "Create Draft",
+      "type": "n8n-nodes-base.gmailTool",
+      "position": [
+        384,
+        1776
+      ],
+      "webhookId": "c40fc123-5d3d-4002-85bd-ec6603a0ad83",
+      "typeVersion": 2.1
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4-turbo-preview",
+          "cachedResultName": "gpt-4-turbo-preview"
+        },
+        "options": {}
+      },
+      "id": "2000b2d8-00d3-4b1f-82a3-7a0fd61aa159",
+      "name": "OpenAI Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "position": [
+        64,
+        1776
+      ],
+      "typeVersion": 1.2
+    },
+    {
+      "parameters": {
+        "updates": [
+          "messages"
+        ],
+        "options": {}
+      },
+      "id": "e18c0c13-259d-40de-8271-94bae548b436",
+      "name": "WhatsApp Trigger",
+      "type": "n8n-nodes-base.whatsAppTrigger",
+      "position": [
+        -320,
+        592
+      ],
+      "webhookId": "2eadd11a-88fa-4423-9ff4-411c12094729",
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "version": 2,
+                  "leftValue": "",
+                  "caseSensitive": true,
+                  "typeValidation": "strict"
+                },
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "b969c18d-14dd-4b34-8d08-801d8818b8d2",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "leftValue": "={{ $('WhatsApp Trigger').item.json.messages[0].type }}",
+                    "rightValue": "audio"
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "voice"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "version": 2,
+                  "leftValue": "",
+                  "caseSensitive": true,
+                  "typeValidation": "strict"
+                },
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "1daa0ee5-cb8b-44c4-ae74-954cae03c10d",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "leftValue": "={{ $('WhatsApp Trigger').item.json.messages[0].type }}",
+                    "rightValue": "text"
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "text"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "a2461cab-1629-432d-81e9-b596c2ffd1bd",
+      "name": "Switch",
+      "type": "n8n-nodes-base.switch",
+      "position": [
+        0,
+        592
+      ],
+      "typeVersion": 3.2
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.url }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "whatsAppApi",
+        "options": {}
+      },
+      "id": "f5e73a51-f19c-4893-b046-814fddbb77d7",
+      "name": "HTTP Request",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        384,
+        512
+      ],
+      "typeVersion": 4.2
+    },
+    {
+      "parameters": {
+        "resource": "audio",
+        "operation": "transcribe",
+        "options": {}
+      },
+      "id": "78604bb8-9e47-4a60-b8e3-750f7996ad05",
+      "name": "OpenAI",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "position": [
+        560,
+        512
+      ],
+      "typeVersion": 1.8
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "7453a002-ec0f-4853-a28d-5d06669cb5d0",
+              "name": "text",
+              "type": "string",
+              "value": "={{ $('WhatsApp Trigger').item.json.messages[0].text.body }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "282fdc09-ed7b-4614-8244-a7e0c1e91578",
+      "name": "Edit Fields",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        528,
+        688
+      ],
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "={{ $json.field }}",
+        "options": {}
+      },
+      "id": "c3eaaeb7-2326-4908-8a7f-db05957f8532",
+      "name": "Split Out",
+      "type": "n8n-nodes-base.splitOut",
+      "position": [
+        -160,
+        592
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "8cbf25ac-3fc9-4892-9c6a-24c974b03362",
+              "name": "message_type",
+              "type": "string",
+              "value": "={{ $json.text }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "5f15a60a-1e05-4214-bb2b-23955fcaafb7",
+      "name": "Edit Fields1",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        736,
+        688
+      ],
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "operation": "send",
+        "phoneNumberId": "580438095157298",
+        "recipientPhoneNumber": "+33646644178",
+        "textBody": "={{ $json.output }}",
+        "additionalFields": {}
+      },
+      "id": "d96f0602-e0a5-49c1-be5d-cb16899a392c",
+      "name": "WhatsApp Business Cloud1",
+      "type": "n8n-nodes-base.whatsApp",
+      "position": [
+        -48,
+        2768
+      ],
+      "webhookId": "b89990f8-a463-4af2-a732-902da14bb3c2",
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Edit Fields1').item.json.message_type }} "
+      },
+      "id": "12eb2309-d711-43c5-9cfc-709b3a40f0c2",
+      "name": "Simple Memory",
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "position": [
+        -128,
+        1776
+      ],
+      "typeVersion": 1.3,
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "resource": "media",
+        "operation": "mediaUrlGet",
+        "mediaGetId": "={{ $json.audio.id }}"
+      },
+      "id": "7959f6d1-0a4e-4d05-ab9f-c7e53e0216c6",
+      "name": "WhatsApp Business Cloud",
+      "type": "n8n-nodes-base.whatsApp",
+      "position": [
+        208,
+        512
+      ],
+      "webhookId": "a4388d29-c2c7-45c4-8977-b768eacf997b",
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "resource": "audio",
+        "input": "={{ $json.output }}",
+        "voice": "nova",
+        "options": {}
+      },
+      "id": "9ee1c493-1144-46bc-9b18-929971731033",
+      "name": "OpenAI1",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "position": [
+        -64,
+        2544
+      ],
+      "typeVersion": 1.8
+    },
+    {
+      "parameters": {
+        "jsCode": "// Loop over input items and change the MIME type of binary data\nfor (const item of $input.all()) {\n\t// Check if the item has binary data\n\tif (item.binary) {\n\t\t// Find the binary property name (assuming there's at least one)\n\t\tconst binaryPropertyNames = Object.keys(item.binary);\n\n\t\tfor (const propName of binaryPropertyNames) {\n\t\t\t// If the MIME type is 'audio/mp3', change it to 'audio/mpeg'\n\t\t\tif (item.binary[propName].mimeType === 'audio/mp3') {\n\t\t\t\titem.binary[propName].mimeType = 'audio/mpeg';\n\t\t\t}\n\t\t}\n\t}\n}\n\nreturn $input.all();\n"
+      },
+      "id": "0e9f8b56-b89a-4b65-ac93-c4f3f0ecb750",
+      "name": "Code",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        176,
+        2544
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "version": 2,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "combinator": "or",
+          "conditions": [
+            {
+              "id": "2163dc40-756e-479a-b7fd-1418ac129a61",
+              "operator": {
+                "name": "filter.operator.equals",
+                "type": "string",
+                "operation": "equals"
+              },
+              "leftValue": "={{ $('WhatsApp Trigger').item.json.messages[0].type }}",
+              "rightValue": "audio"
+            }
+          ]
+        },
+        "options": {
+          "ignoreCase": false
+        }
+      },
+      "id": "11563871-5d4f-4df3-b541-2f7cfe0f511b",
+      "name": "If",
+      "type": "n8n-nodes-base.if",
+      "position": [
+        -352,
+        2576
+      ],
+      "typeVersion": 2.2
+    },
+    {
+      "parameters": {
+        "resource": "media",
+        "phoneNumberId": "580438095157298",
+        "additionalFields": {}
+      },
+      "id": "c690e3ea-f526-416f-8c57-32acacc422ec",
+      "name": "WhatsApp Business Cloud2",
+      "type": "n8n-nodes-base.whatsApp",
+      "position": [
+        416,
+        2544
+      ],
+      "webhookId": "7116ffeb-dd52-4993-a041-7ceac577b12d",
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "operation": "send",
+        "phoneNumberId": "580438095157298",
+        "recipientPhoneNumber": "+33646644178",
+        "messageType": "audio",
+        "mediaPath": "useMediaId",
+        "mediaId": "={{ $json.id }}",
+        "additionalFields": {}
+      },
+      "id": "bb21bc51-1632-4904-ba55-1ab775e41348",
+      "name": "WhatsApp Business Cloud3",
+      "type": "n8n-nodes-base.whatsApp",
+      "position": [
+        656,
+        2544
+      ],
+      "webhookId": "1957dc07-4009-4a6e-a2a4-11ec08ec9816",
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "mode": "list",
+          "value": "app6hvrEDwB41AKAz",
+          "cachedResultUrl": "https://airtable.com/app6hvrEDwB41AKAz",
+          "cachedResultName": "[BlockA] - Contact List"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "list",
+          "value": "tbldXug1pLHGc0xoI",
+          "cachedResultUrl": "https://airtable.com/app6hvrEDwB41AKAz/tbldXug1pLHGc0xoI",
+          "cachedResultName": "Auto"
+        },
+        "filterByFormula": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Filter_By_Formula', ``, 'string') }}",
+        "returnAll": false,
+        "limit": 5,
+        "options": {}
+      },
+      "id": "3afcda40-a74b-4e46-9a1e-2b1c10afa65b",
+      "name": "Get Email",
+      "type": "n8n-nodes-base.airtableTool",
+      "position": [
+        544,
+        1776
+      ],
+      "typeVersion": 2.1
+    },
+    {
+      "parameters": {
+        "content": "## 🟫  Part 1: WhatsApp Message Intake & Voice Transcription\n# Reception WhatsApp & Transcription vocale\n\n🔧 Main Modules:\nWhatsApp Trigger: Listens for new incoming messages.\n\nSplit Out: Breaks down incoming message batches.\n\nSwitch: Identifies the message type (text, image, audio, etc.).\n\nWhatsApp Business Cloud: Retrieves media content.\n\nHTTP Request: Downloads audio files for transcription.\n\nOpenAI (Whisper): Transcribes voice messages into text.\n\nEdit Fields: Cleans and formats the output into structured JSON.\n\n🧠 Goal:\nDetect and transcribe voice messages received via WhatsApp.\nPrepares clean, structured text that can be interpreted by the AI agent for further action.",
+        "height": 920,
+        "width": 1280
+      },
+      "id": "3098dc1b-5382-4881-b995-5d7643e01a61",
+      "name": "Sticky Note1",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -384,
+        -16
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "content": "##  🟥 Part 3: Vocal Response & WhatsApp Feedback\n# Vocal Generation & Personalized WhatsApp Return\n\n🔧 Main Modules:\nOpenAI (Text-to-Voice logic): Generates a personalized summary or confirmation message.\n\nIf: Decides whether to generate a voice message or just a text reply.\n\nCode: Formats the response and adapts the message payload for WhatsApp API.\n\nWhatsApp Business Cloud (media.mediaupload): Sends the audio message file.\n\nWhatsApp Business Cloud (message.send): Sends the final WhatsApp message (text or audio).\n\nOptional: Return text + audio simultaneously for enriched UX.\n\n🧠 Goal:\nRespond back to the client or user directly via WhatsApp, with either a summarized text or an auto-generated voice message — offering clarity, speed, and a human-like touch.",
+        "height": 940,
+        "width": 1280,
+        "color": 3
+      },
+      "id": "c0d48d7e-d482-4ef4-a86e-55a3c52b020b",
+      "name": "Sticky Note2",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -384,
+        2064
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "content": "## 🟩 Part 2: Smart Email Agent – Read, Draft, Respond\n# Email AI Agent – Send, Draft, Reply...\n\n🔧 Main Modules:\nEmail Agent: Core logic and orchestration of all email-related actions.\n\nOpenAI Chat Model: Extracts user intent and provides reasoning based on message.\n\nSimple Memory (Optional): Stores previous interactions.\n\nSend Email: Sends email directly if fully automated.\n\nCreate Draft: Generates a draft email for manual validation.\n\nGet Email (Airtable): Retrieves the recipient’s emails and related content from a contact stored in the database.\n\n🧠 Goal:\nTurn a WhatsApp voice/text instruction into a precise email action: read, summarize, draft, or reply.\nThe agent leverages OpenAI to act intelligently and adapt to the context.",
+        "height": 1160,
+        "width": 1280,
+        "color": 4
+      },
+      "id": "53594181-d82a-4277-ae00-9fb60862f581",
+      "name": "Sticky Note3",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -384,
+        912
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "content": "## 📘 Smart Email Agent via WhatsApp – Module-by-Module Setup Guide\n# This guide explains how the already-built template works, detailing each step with the required modules and configurations.\n\n🧩 What You’ll Need\n\nTo deploy this AI-powered email assistant, ensure you have the following:\n\n✅ WhatsApp Business Cloud API access(with a registered phone number and webhook configured)\n✅ OpenAI API Key(used for both GPT and Whisper models)\n✅ Gmail or Google Workspace account(OAuth2 credentials to access email content and send replies)\n✅ Airtable account (free plan is sufficient)(used for contact lookups, template storage, or logging interactions)\n✅ n8n instance(either cloud or self-hosted with HTTPS enabled)\n✅ Basic familiarity with n8n workflow builder\n\n⏱️ Estimated setup time: 30–60 minutes\n\n🟫 Step 1 – Capture WhatsApp Messages\n\nModules:\nWebhook: Listens for WhatsApp events via the Meta API.\nSplit Out: Handles rare fallback events where multiple messages are received in one payload.\nSwitch: Determines the type of message (text, audio, etc.).\nWhatsApp Media Node: Retrieves media ID if it’s an audio message.\nHTTP Request: Downloads the audio file from the media ID.\nOpenAI Whisper: Transcribes audio to text.\n(Optional) Edit Fields: Cleans and standardizes the text for further processing.\n\nWhat Happens:\n\nThis section ensures every incoming message (voice or text) is accurately processed and ready for interpretation.\n\n🟩 Step 2 – Analyze & Process the Email Request\n\nModules:\n\nOpenAI Chat: Extracts the intent from the message (e.g., send, reply, summarize).\n\nGmail Nodes:\n\nGmail: Get Email: Retrieves past email content.\nGmail: Create Draft: Saves a reply as a draft.\nGmail: Send Email: Sends an email directly if action is confirmed.\n\nAirtable:\n\nRetrieves contact information (email, job title, company, etc.).\nLogs key elements for memory (intent, timestamp, status, etc.).\n\nKey Feature:\n\nYour Gut AI Agent — This setup builds a memory by correlating emails and contact profiles inside Airtable. Your agent becomes context-aware, knowing who it's speaking to and what has been exchanged previously.\n\n🟥 Step 3 – Return Smart Feedback via WhatsApp\n\nModules:\n\nOpenAI Chat: Generates a natural-language confirmation of the action taken.\n\n(Optional) TTS/Voice Generation (Tip to strengthen your workflow): Automatically converts the confirmation into a voice message using ElevenLabs - allowing the assistant to communicate feedback in audio form.\n\nCode Node: Ensures the correct MIME type for the audio file (e.g., audio/mp3 → audio/mpeg).\n\nWhatsApp Media Upload: Uploads the audio to WhatsApp Cloud.\n\nWhatsApp Message Sender: Sends the confirmation message (text or voice) back to the user.\n\nAdditional Notes:\n\nThe Code Node loops through binary data to ensure compatibility with WhatsApp's expected audio format.\n\n🔐 Security Best Practices\n\nNever hardcode API keys – use environment variables.\nSecure your Webhook with custom headers.\nMonitor usage and logs regularly.\n\nHandle errors with fallback branches in n8n.\n\n",
+        "height": 3020,
+        "width": 720,
+        "color": 5
+      },
+      "id": "fdde0659-66b8-4973-9888-aa77c639535b",
+      "name": "Sticky Note",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        928,
+        -16
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "content": "# https://github.com/REDOANUZZAMAN\n",
+        "width": 688
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        192,
+        224
+      ],
+      "typeVersion": 1,
+      "id": "61e51b5b-b7d2-4903-93a5-585ce011026c",
+      "name": "Sticky Note4"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "If": {
+      "main": [
+        [
+          {
+            "node": "OpenAI1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "WhatsApp Business Cloud1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "WhatsApp Business Cloud2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "WhatsApp Business Cloud",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI1": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Email": {
+      "ai_tool": [
+        [
+          {
+            "node": "Email Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Email": {
+      "ai_tool": [
+        [
+          {
+            "node": "Email Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email Agent": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Draft": {
+      "ai_tool": [
+        [
+          {
+            "node": "Email Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields1": {
+      "main": [
+        [
+          {
+            "node": "Email Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "OpenAI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "Email Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "WhatsApp Trigger": {
+      "main": [
+        [
+          {
+            "node": "Split Out",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Email Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "WhatsApp Business Cloud": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "WhatsApp Business Cloud2": {
+      "main": [
+        [
+          {
+            "node": "WhatsApp Business Cloud3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "bdf7f784-ac28-4aae-aecb-5a75c3d98ab0",
+  "meta": {
+    "instanceId": "3ea5ee65f04b27a744235742229cd33fb9bc1c1a8cd25b6ec8329b2619003115"
+  },
+  "id": "aABkxEso7UJYqtFW",
+  "tags": []
+}
